@@ -43,7 +43,7 @@ please refer to this link for app id and token,
 - https://apoorv487.medium.com/testing-fcm-push-notification-http-v1-through-oauth-2-0-playground-postman-terminal-part-2-7d7a6a0e2fa0
 
 
-### To change user's phone no & name, please change it at this line
+### To change user's phone no & name, please view this line
 https://github.com/shiburagi/flutter_messenger_app_challenge/blob/4b5568a92738fd4ca0e1ad3aafd8a0cd4603f83e/lib/main.dart#L35
 
 
