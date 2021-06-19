@@ -1,4 +1,4 @@
-# uikit
+# chat_logic
 
 A new Flutter package project.
 

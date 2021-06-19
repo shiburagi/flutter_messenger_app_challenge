@@ -1,4 +1,4 @@
-# uikit
+# utils
 
 A new Flutter package project.
 
