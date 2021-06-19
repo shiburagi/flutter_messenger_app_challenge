@@ -53,7 +53,8 @@ Future initialiseFirebase() async {
 class FirebaseBloc extends Cubit<FirebaseState> {
   FirebaseBloc() : super(FirebaseState());
 
-  subscibe(String senderId) {
+  subscibe(String senderId) async {
+    await FirebaseMessaging.instance.deleteToken();
     FirebaseMessaging.instance.subscribeToTopic(senderId);
   }
 
