@@ -1,12 +1,9 @@
-import 'dart:developer';
-
 import 'package:chat_logic/chat_logic.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_messager_app_challenge/views/chat_list.dart';
 import 'package:flutter_messager_app_challenge/views/home.dart';
 import 'package:utils/models/user.dart';
-import 'package:utils/resources/storage.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
@@ -15,33 +12,14 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+class _HomePageState extends State<HomePage> {
   @override
   void initState() {
-    WidgetsBinding.instance?.addObserver(this);
-
     super.initState();
     final userBloc = context.read<UserBloc>();
     listenTo(userBloc.state);
     userBloc.stream.listen((event) {
       listenTo(event);
-    });
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance?.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    AppStorage.instance.initialize().then((value) {
-      if (state == AppLifecycleState.resumed) {
-        final userBloc = context.read<UserBloc>();
-        listenTo(userBloc.state);
-      }
     });
   }
 

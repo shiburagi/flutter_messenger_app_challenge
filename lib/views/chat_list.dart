@@ -9,6 +9,7 @@ import 'package:flutter_messager_app_challenge/routes.dart';
 import 'package:localization/localization.dart';
 import 'package:uikit/uikit.dart';
 import 'package:utils/models/sender.dart';
+import 'package:utils/resources/storage.dart';
 import 'package:utils/utils.dart';
 
 class ChatListView extends StatefulWidget {
@@ -18,7 +19,8 @@ class ChatListView extends StatefulWidget {
   _ChatListViewState createState() => _ChatListViewState();
 }
 
-class _ChatListViewState extends State<ChatListView> {
+class _ChatListViewState extends State<ChatListView>
+    with WidgetsBindingObserver {
   final options = LiveOptions(
     showItemInterval: Duration(milliseconds: 150),
     showItemDuration: Duration(milliseconds: 200),
@@ -28,10 +30,30 @@ class _ChatListViewState extends State<ChatListView> {
 
   @override
   void initState() {
+    WidgetsBinding.instance?.addObserver(this);
+
     super.initState();
     FirebaseBloc().startListen((chat) {
       final user = context.read<UserBloc>().state;
       if (user != null) context.read<ChatBloc>().listenSenders(user);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance?.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    AppStorage.instance.initialize().then((value) {
+      if (state == AppLifecycleState.resumed) {
+        final userBloc = context.read<UserBloc>();
+        if (userBloc.state != null)
+          context.read<ChatBloc>().listenSenders(userBloc.state!);
+      }
     });
   }
 
