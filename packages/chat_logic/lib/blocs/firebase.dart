@@ -4,17 +4,49 @@ import 'package:bloc/bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:utils/resources/storage.dart';
 import 'package:utils/utils.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  print('Handling a background message ${message.messageId}');
+  if (!AppStorage.instance.isInitialize) await AppStorage.instance.initialize();
+  await storeMessage(message);
 }
 
 AndroidNotificationChannel? channel;
 FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin;
+
+Future<Chat?> storeMessage(RemoteMessage message) async {
+  RemoteNotification? notification = message.notification;
+  AndroidNotification? android = message.notification?.android;
+  if (notification != null && android != null && !kIsWeb) {
+    flutterLocalNotificationsPlugin?.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            channel!.id,
+            channel!.name,
+            channel!.description,
+            icon: 'launch_background',
+          ),
+        ));
+
+    final data = message.data;
+    log("$data", name: "FCM");
+
+    final chat = Chat.fromJson(data);
+    chat.createdMillis ??= DateTime.now().millisecondsSinceEpoch;
+    log("${chat.toJson()}", name: "FCM");
+
+    await AppStorage.instance.addMessage(chat.senderId!, chat.toJson());
+
+    return chat;
+  }
+}
 
 Future initialiseFirebase() async {
   await Firebase.initializeApp();
@@ -59,34 +91,15 @@ class FirebaseBloc extends Cubit<FirebaseState> {
   }
 
   startListen([ValueChanged<Chat>? onMessageReceived]) async {
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      log("onMessageOpenedApp", name: "FCM");
+    });
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      RemoteNotification? notification = message.notification;
-      AndroidNotification? android = message.notification?.android;
-      if (notification != null && android != null && !kIsWeb) {
-        flutterLocalNotificationsPlugin?.show(
-            notification.hashCode,
-            notification.title,
-            notification.body,
-            NotificationDetails(
-              android: AndroidNotificationDetails(
-                channel!.id,
-                channel!.name,
-                channel!.description,
-                icon: 'launch_background',
-              ),
-            ));
+      log("onListenEvent", name: "FCM");
 
-        final data = message.data;
-        log("$data", name: "FCM");
-
-        final chat = Chat.fromJson(data);
-        chat.createdMillis ??= DateTime.now().millisecondsSinceEpoch;
-        log("${chat.toJson()}", name: "FCM");
-
-        AppStorage.instance
-            .addMessage(chat.senderId!, chat.toJson())
-            .then((value) => onMessageReceived?.call(chat));
-      }
+      storeMessage(message).then((chat) {
+        if (chat != null) onMessageReceived?.call(chat);
+      });
     });
   }
 }

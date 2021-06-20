@@ -38,8 +38,12 @@ class AppStorage {
 
   StoreRef<String, List<Object?>> get chatsRef => StoreRef.main();
 
+  bool get isInitialize => _database != null;
+
   Future initialize() async {
+    log("initialize", name: "AppStorage");
     try {
+      _database?.close();
       var dir = await getApplicationDocumentsDirectory();
       await dir.create(recursive: true);
       var dbPath = join(dir.path, 'chat.db');
@@ -67,6 +71,10 @@ class AppStorage {
 
   Stream<RecordSnapshot<String, List<Object?>>> streamChats() {
     return chatsRef.stream(_database!);
+  }
+
+  Future<List<RecordSnapshot<String, List<Object?>>>> getChats() {
+    return chatsRef.query().getSnapshots(_database!);
   }
 
   Future<List<Object?>?> getMessages(String key) {

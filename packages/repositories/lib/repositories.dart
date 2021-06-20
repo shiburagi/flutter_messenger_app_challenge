@@ -24,7 +24,7 @@ class Repositories {
         data: {
           "message": {
             "topic": "tel_$senderId",
-            "notification": {"body": chat.senderName, "title": chat.message},
+            "notification": {"title": chat.senderName, "body": chat.message},
             "data": chat.toJson(),
           }
         },

@@ -14,42 +14,48 @@ class ChatBloc extends Cubit<ChatState> {
   }
 
   listenSenders(User user) async {
-    AppStorage.instance.streamChats().listen((event) {
-      Map<String, Sender> senders = state.senders ?? {};
-
-      final sender = Sender(
-        senderId: event.key,
-        name: event.key,
-      );
-      final lastMessage = event.value.firstWhere((element) {
-        return true;
-      }, orElse: () => null);
-
-      final senderInfo = event.value.firstWhere((element) {
-        Chat chat = Chat.fromJson(element as Map<String, dynamic>);
-        return chat.senderId != user.mobileNumber;
-      }, orElse: () => null);
-
-      if (senderInfo == null) return;
-      if (lastMessage != null) {
-        Chat info = Chat.fromJson(senderInfo as Map<String, dynamic>);
-        Chat chat = Chat.fromJson(lastMessage as Map<String, dynamic>);
-        sender.name = info.senderName;
-        sender.updatedMillis = chat.createdMillis;
-        sender.lastMessage = chat.message;
-      }
-
-      senders[event.key] = sender;
-      if (event.key == state.senderId)
-        emit(state.copyWith(
-          senders: {...senders},
-          chats: toChats(event.value),
-        ));
-      else
-        emit(state.copyWith(
-          senders: {...senders},
-        ));
+    final list = AppStorage.instance.streamChats();
+    list.listen((event) {
+      process(user, event);
     });
+  }
+
+  process(User user, RecordSnapshot<String, List<Object?>> event) {
+    log("onListenEvent:$event", name: "ChatBloc");
+    Map<String, Sender> senders = state.senders ?? {};
+
+    final sender = Sender(
+      senderId: event.key,
+      name: event.key,
+    );
+    final lastMessage = event.value.firstWhere((element) {
+      return true;
+    }, orElse: () => null);
+
+    final senderInfo = event.value.firstWhere((element) {
+      Chat chat = Chat.fromJson(element as Map<String, dynamic>);
+      return chat.senderId != user.mobileNumber;
+    }, orElse: () => null);
+
+    if (senderInfo == null) return;
+    if (lastMessage != null) {
+      Chat info = Chat.fromJson(senderInfo as Map<String, dynamic>);
+      Chat chat = Chat.fromJson(lastMessage as Map<String, dynamic>);
+      sender.name = info.senderName;
+      sender.updatedMillis = chat.createdMillis;
+      sender.lastMessage = chat.message;
+    }
+
+    senders[event.key] = sender;
+    if (event.key == state.senderId)
+      emit(state.copyWith(
+        senders: {...senders},
+        chats: toChats(event.value),
+      ));
+    else
+      emit(state.copyWith(
+        senders: {...senders},
+      ));
   }
 
   Future listenMessages(String senderId) async {
